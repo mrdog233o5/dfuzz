@@ -8,7 +8,7 @@
 
 using namespace std;
 
-const char letters[] = "1234567890QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm";
+const char letters[] = "1234567890qwertyuiopasdfghjklzxcvbnm";
 CURL* curl = curl_easy_init();
 
 // Write callback function to capture the headers
