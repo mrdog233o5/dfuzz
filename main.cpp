@@ -7,8 +7,7 @@
 #include <vector>
 
 using namespace std;
-
-const char letters[] = "1234567890qwertyuiopasdfghjklzxcvbnm";
+const char letters[] = "1234567890qwertyuiopasdfghjklzxcvbnm\0";
 CURL* curl = curl_easy_init();
 
 // Write callback function to capture the headers
@@ -71,7 +70,8 @@ int fuzz(int DIGITS, int BASE, const char* url) {
             }
         }
         times++;
-
+        
+        char n = '\0';
         for (int j = 0; j < out.size(); j++) {
             word = word + letters[out[j]];
             if (out[j] != BASE-1) {
@@ -79,14 +79,20 @@ int fuzz(int DIGITS, int BASE, const char* url) {
             }
         }
         
-        string combined = url + word;
-        const char* result = combined.c_str();
-        int code = getReturnCode(result);
-        cout << result;
-        if (code != 0 && code != 404) {
-            cout << "  -  " << code << endl;
-        } else {
-            cout << "\033[2K\r";
+        string nulls = "";
+        for (int temp; temp < out.size(); temp++) {
+            nulls = nulls + "\0";
+        }
+        if (word.at(0) != n) {
+            string combined = url + word;
+            const char* result = combined.c_str();
+            int code = getReturnCode(result);
+            cout << result;
+            if (code != 0 && code != 404) {
+                cout << "  -  " << code << endl;
+            } else {
+                cout << "\033[2K\r";
+            }
         }
         if (steak) {
             break;
