@@ -1,12 +1,15 @@
 #include <algorithm>
 #include <iostream>
 #include <curl/curl.h>
+#include <unistd.h>
 #include <string>
+#include <thread>
 #include <vector>
 
 using namespace std;
 
 const char letters[] = "1234567890QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm";
+CURL* curl = curl_easy_init();
 
 // Write callback function to capture the headers
 size_t WriteHeaderCallback(void* contents, size_t size, size_t nmemb, string* response) {
@@ -16,7 +19,6 @@ size_t WriteHeaderCallback(void* contents, size_t size, size_t nmemb, string* re
 }
 
 int getReturnCode(const char* url) {
-    CURL* curl = curl_easy_init();
     if (curl) {
         // Set the target URL
         curl_easy_setopt(curl, CURLOPT_URL, url);
@@ -79,8 +81,10 @@ int fuzz(int DIGITS, int BASE, const char* url) {
         
         string combined = url + word;
         const char* result = combined.c_str();
-        cout << result << "  -  " << getReturnCode(result) << endl;
-
+        int code = getReturnCode(result);
+        if (code != 0 && code != 404) {
+            cout << result << "  -  " << getReturnCode(result) << endl;
+        }
         if (steak) {
             break;
         }
