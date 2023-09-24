@@ -1,8 +1,12 @@
+#include <algorithm>
 #include <iostream>
 #include <curl/curl.h>
 #include <string>
+#include <vector>
 
 using namespace std;
+
+const char letters[] = "1234567890QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm";
 
 // Write callback function to capture the headers
 size_t WriteHeaderCallback(void* contents, size_t size, size_t nmemb, string* response) {
@@ -33,7 +37,6 @@ int getReturnCode(const char* url) {
             curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
             return httpCode;
         } else {
-            std::cerr << "Failed to send request: " << curl_easy_strerror(res) << std::endl;
             return 0;
         }
         // Cleanup
@@ -42,15 +45,53 @@ int getReturnCode(const char* url) {
     return 0;
 }
 
+int fuzz(int DIGITS, int BASE, const char* url) {
+    int size = DIGITS;
+    int times = 0;
+    
+    while (1) {
+        vector<int> out(size);
+        string word = "";
+        int steak = 1;
+        for (int i = 0; i < times; i ++) {
+            out[0] = out[0]+1;
+            for (int j = 0; j < out.size(); j++) {
+                if (out[j] >= BASE) {
+                    try {
+                        out[j+1] = out[j+1]+1;
+                        out[j] = 0;
+                    } catch (...) {
+                        void(0);
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+        times++;
+
+        for (int j = 0; j < out.size(); j++) {
+            word = word + letters[out[j]];
+            if (out[j] != BASE-1) {
+                steak*=0;
+            }
+        }
+        
+        string combined = url + word;
+        const char* result = combined.c_str();
+        cout << result << "  -  " << getReturnCode(result) << endl;
+
+        if (steak) {
+            break;
+        }
+    }
+    return times;
+}
+
 int main (int argc, char *argv[]) {
     int length = stoi(argv[2]);
-    cout << getReturnCode(argv[1]) << endl;
-    for (int i = 0; i < length; i++) {
-        for (int j = 33; j < 126+1; j++) {
-            cout << char(j);
-        }
-        cout << endl;
-    }
+    fuzz(stoi(argv[2]),sizeof(letters)/sizeof(char)-1,argv[1]);
+
     return 0;
 }
 
