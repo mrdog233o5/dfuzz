@@ -8,7 +8,10 @@
 
 using namespace std;
 const char letters[] = "1234567890qwertyuiopasdfghjklzxcvbnm\0";
+const char lettersNoN[] = "1234567890qwertyuiopasdfghjklzxcvbnm";
 CURL* curl = curl_easy_init();
+char n = '\0';
+char blank;
 
 // Write callback function to capture the headers
 size_t WriteHeaderCallback(void* contents, size_t size, size_t nmemb, string* response) {
@@ -49,6 +52,7 @@ int getReturnCode(const char* url) {
 int fuzz(int DIGITS, int BASE, const char* url) {
     int size = DIGITS;
     int times = 0;
+    vector<string> usedDir;
     
     while (1) {
         vector<int> out(size);
@@ -69,31 +73,36 @@ int fuzz(int DIGITS, int BASE, const char* url) {
                 }
             }
         }
-        times++;
         
-        char n = '\0';
         for (int j = 0; j < out.size(); j++) {
             word = word + letters[out[j]];
             if (out[j] != BASE-1) {
                 steak*=0;
             }
         }
-        
-        string nulls = "";
-        for (int temp; temp < out.size(); temp++) {
-            nulls = nulls + "\0";
-        }
-        if (word.at(0) != n) {
-            string combined = url + word;
-            const char* result = combined.c_str();
-            int code = getReturnCode(result);
-            cout << result;
-            if (code != 0 && code != 404) {
-                cout << "  -  " << code << endl;
-            } else {
-                cout << "\033[2K\r";
+        string currentWord = "";
+        bool dirUsed = false;
+        for (int i = 0; i < word.size(); i++) {
+            if (word[i] != n && word[i] != blank) {
+                currentWord = currentWord + word[i];
             }
         }
+
+        for (int i = 0; i < usedDir.size(); i++) {
+            if (usedDir[i] == currentWord) {
+                dirUsed = true;
+            }
+        }
+        if (currentWord.size() > 0 && dirUsed == false) {
+            string combined = url + currentWord;
+            const char* result = combined.c_str();
+            int code = getReturnCode(result);
+            if (code != 0 && code != 404) {
+                cout << result << "  -  " << code << endl;
+            }
+            usedDir.push_back(currentWord);
+        }
+        times++;
         if (steak) {
             break;
         }
