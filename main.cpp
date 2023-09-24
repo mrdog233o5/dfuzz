@@ -82,8 +82,11 @@ int fuzz(int DIGITS, int BASE, const char* url) {
         string combined = url + word;
         const char* result = combined.c_str();
         int code = getReturnCode(result);
+        cout << result;
         if (code != 0 && code != 404) {
-            cout << result << "  -  " << getReturnCode(result) << endl;
+            cout << "  -  " << code << endl;
+        } else {
+            cout << "\033[2K\r";
         }
         if (steak) {
             break;
@@ -94,7 +97,13 @@ int fuzz(int DIGITS, int BASE, const char* url) {
 
 int main (int argc, char *argv[]) {
     int length = stoi(argv[2]);
+    string headingLogo = "██████╗ ███████╗██╗   ██╗███████╗███████╗\n██╔══██╗██╔════╝██║   ██║╚══███╔╝╚══███╔╝\n██║  ██║█████╗  ██║   ██║  ███╔╝   ███╔╝ \n██║  ██║██╔══╝  ██║   ██║ ███╔╝   ███╔╝  \n██████╔╝██║     ╚██████╔╝███████╗███████╗\n╚═════╝ ╚═╝      ╚═════╝ ╚══════╝╚══════╝";
+    cout << headingLogo << endl << "fuzzing tool created by mrdog233o5" << endl << endl;
+
+    cout << "***All avaiable directories : " << endl << endl;
     fuzz(stoi(argv[2]),sizeof(letters)/sizeof(char)-1,argv[1]);
+
+    cout << endl << "done" << endl;
 
     return 0;
 }
