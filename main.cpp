@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <iostream>
 #include <curl/curl.h>
-#include <unistd.h>
 #include <string>
 #include <thread>
 #include <vector>
@@ -9,9 +8,9 @@
 using namespace std;
 const char letters[] = "1234567890qwertyuiopasdfghjklzxcvbnm\0";
 const char lettersNoN[] = "1234567890qwertyuiopasdfghjklzxcvbnm";
-CURL* curl = curl_easy_init();
 char n = '\0';
 char blank;
+CURL* curl = curl_easy_init();
 
 // Write callback function to capture the headers
 size_t WriteHeaderCallback(void* contents, size_t size, size_t nmemb, string* response) {
@@ -49,12 +48,13 @@ int getReturnCode(const char* url) {
     return 0;
 }
 
-int fuzz(int DIGITS, int BASE, const char* url) {
+int fuzz(int DIGITS, int BASE, const char* url) { 
     int size = DIGITS;
     int times = 0;
     vector<string> usedDir;
-    
+
     while (1) {
+        string currentWord;
         vector<int> out(size);
         string word = "";
         int steak = 1;
@@ -80,11 +80,10 @@ int fuzz(int DIGITS, int BASE, const char* url) {
                 steak*=0;
             }
         }
-        string currentWord = "";
         bool dirUsed = false;
         for (int i = 0; i < word.size(); i++) {
             if (word[i] != n && word[i] != blank) {
-                currentWord = currentWord + word[i];
+                currentWord.push_back(word[i]);
             }
         }
 
@@ -99,8 +98,8 @@ int fuzz(int DIGITS, int BASE, const char* url) {
             int code = getReturnCode(result);
             if (code != 0 && code != 404) {
                 cout << result << "  -  " << code << endl;
+                usedDir.push_back(currentWord);
             }
-            usedDir.push_back(currentWord);
         }
         times++;
         if (steak) {
@@ -111,14 +110,25 @@ int fuzz(int DIGITS, int BASE, const char* url) {
 }
 
 int main (int argc, char *argv[]) {
-    int length = stoi(argv[2]);
+    // argument syntax = dfuzz <target url> <max lenth of the words to try>
+    const char * URL = argv[1];
+    const int LENGTH = stoi(argv[2]);
+    const string issues[] = {"wifi is off","url doesnt exist","typo in url"};
+    int code = getReturnCode(URL);
     string headingLogo = "██████╗ ███████╗██╗   ██╗███████╗███████╗\n██╔══██╗██╔════╝██║   ██║╚══███╔╝╚══███╔╝\n██║  ██║█████╗  ██║   ██║  ███╔╝   ███╔╝ \n██║  ██║██╔══╝  ██║   ██║ ███╔╝   ███╔╝  \n██████╔╝██║     ╚██████╔╝███████╗███████╗\n╚═════╝ ╚═╝      ╚═════╝ ╚══════╝╚══════╝";
     cout << headingLogo << endl << "fuzzing tool created by mrdog233o5" << endl << endl;
 
-    cout << "***All avaiable directories : " << endl << endl;
-    fuzz(stoi(argv[2]),sizeof(letters)/sizeof(char)-1,argv[1]);
-
-    cout << endl << "done" << endl;
+    if (code == 0 || code == 404) {
+        cout << "failed to access url : " << URL << endl;
+        cout << "possible issues : " << endl;
+        for (int i = 0; i < sizeof(issues)/sizeof(issues[0]); i++) {
+            cout << i+1 << " - " << issues[i] << endl;
+        }
+    } else {
+        cout << "***All avaiable directories : " << endl << endl;
+        fuzz(LENGTH,sizeof(letters)/sizeof(char)-1,URL);
+        cout << endl << "done" << endl;
+    }
 
     return 0;
 }
