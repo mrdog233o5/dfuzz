@@ -25,7 +25,7 @@ int main (int argc, char *argv[]) {
     }
     const char* URL = URLstr.c_str();
     // check argv
-    if (argc == 1) {
+    if (argc < 2) {
         cout << "missing argument, try to run \n man dfuzz" << endl;
         return 1;
     }
