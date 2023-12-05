@@ -164,7 +164,7 @@ vector<string> fuzzAll(const char* url, int DIGITS, int BASE) {
             const char* result = combined.c_str();
             int code = getReturnCode(result);
             if (code != 0 && code != 404) {
-                cout << result << "  -  " << code << endl;
+                cout << "\033[38;2;255;255;100m" << result << "  -  " << code << endl;
                 res.push_back(currentWord);
             }
 
@@ -198,8 +198,8 @@ vector<string> fuzzWordlist(const char* url, const char* wordlist) {
         const char* result = combined.c_str();
         int code = getReturnCode(result);
         if (code != 0 && code != 404) {
-            cout << result << "  -  " << code << endl;
-            res.push_back(currentWord);
+            cout << "\033[38;2;255;255;100m" << result << "  -  " << code << endl;
+           res.push_back(currentWord);
         }
         
     }
