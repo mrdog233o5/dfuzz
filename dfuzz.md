@@ -1,24 +1,24 @@
 ### NAME
-	jogPM - A generic simple password manager
+
+    dfuzz - A generic simple password manager
 
 ### SYNOPSIS
-	jogpm [--help]
-	jogpm [setup|gen|save|get] {options}
+
+	dfuzz [ all | word ] {options}
 
 ### USAGE
-	help    read the help page (the one that you are currently reading)
-	gen     generte a password
-		syntax: jogpm gen <password length> <flags>
-		must provide at least one flag that isn't --cp
-		flags:
-			--char      include english characters
-			--num       include digits
-			--syb       include symbols
-			--cp        copy the generated password
-	save    save the generated password
-		syntax: jogpm save <password name> <password>
-	get     get saved passwords
-		syntax: jogpm get <password name> <flags>
-		flags:
-			--cp        copy the password
+
+	all     check ALL of the posibilities, all characters and numbers, it will take a VERY long time
+            syntax:
+                dfuzz all <URL> <characters>
+            example:
+                # list all directory for google that is 2 characters long
+                dfuzz all https://www.google.com/ 3
+
+	word    go through a wordlist
+            syntax:
+                dfuzz word <URL> <wordlist directory>
+            example:
+                # fuzz https://www.google.com/ with the wordlist stored at /Users/coolguy/hack/wordlist/dir.txt
+                dfuzz word https://www.google.com/ /Users/coolguy/hack/wordlist/dir.txt
 
