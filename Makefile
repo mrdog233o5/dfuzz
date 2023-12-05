@@ -1,6 +1,6 @@
 CC=g++
 FILENAME=./main.cpp
-NAME=dfuzz
+NAME=main
 
 run: build
 

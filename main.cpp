@@ -1,9 +1,9 @@
-#include <algorithm>
+#include <cstring>
 #include <iostream>
 #include <curl/curl.h>
 #include <string>
-#include <thread>
 #include <vector>
+#include <fstream>
 
 using namespace std;
 const char letters[] = "1234567890qwertyuiopasdfghjklzxcvbnm\0";
@@ -11,6 +11,71 @@ const char lettersNoN[] = "1234567890qwertyuiopasdfghjklzxcvbnm";
 char n = '\0';
 char blank;
 CURL* curl = curl_easy_init();
+
+vector<string> fuzzWordlist(const char* url, const char* wordlist);
+size_t WriteHeaderCallback(void* contents, size_t size, size_t nmemb, string* response);
+int getReturnCode(const char* url);
+vector<string> fuzzAll(const char* url, int DIGITS, int BASE);
+bool checkURL(const char * URL);
+
+int main (int argc, char *argv[]) {
+    string URLstr = argv[2];
+    if (URLstr.back() != '/') {
+        URLstr += '/';
+    }
+    const char* URL = URLstr.c_str();
+    // check argv
+    if (argc == 1) {
+        cout << "missing argument, try to run \n man dfuzz" << endl;
+        return 1;
+    }
+
+    // argument syntax = dfuzz <target url> <max lenth of the words to try>
+     if (argc < 2) {
+        cout << "missing mode" << endl;
+        return 1;
+    }
+    if (argc < 3) {
+        cout << "missing url" << endl;
+        return 1;
+    }
+    string headingLogo = "██████╗ ███████╗██╗   ██╗███████╗███████╗\n██╔══██╗██╔════╝██║   ██║╚══███╔╝╚══███╔╝\n██║  ██║█████╗  ██║   ██║  ███╔╝   ███╔╝ \n██║  ██║██╔══╝  ██║   ██║ ███╔╝   ███╔╝  \n██████╔╝██║     ╚██████╔╝███████╗███████╗\n╚═════╝ ╚═╝      ╚═════╝ ╚══════╝╚══════╝";
+    cout << headingLogo << endl << "fuzzing tool created by mrdog233o5" << endl << endl;
+
+    if (checkURL(URL)) {
+        cout << "check pass" << endl;
+        if (strcmp(argv[1], "all") == 0) {
+            cout << "selected mode: all" << endl;
+            cout << "***All avaiable directories : " << endl << endl;
+            fuzzAll(URL, stoi(argv[3]),sizeof(letters)/sizeof(char)-1);
+            cout << endl << "done" << endl;
+        } else if (strcmp(argv[1], "word") == 0) {
+            cout << "selected mode: wordlist" << endl;
+            cout << "***All avaiable directories : " << endl << endl;
+            fuzzWordlist(URL, argv[3]);
+            cout << endl << "done" << endl;
+        } else {
+            cout << "mode not found!" << endl;
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+bool checkURL(const char * URL) {
+    const string issues[] = {"wifi is off","url doesnt exist","typo in url"};
+    int code = getReturnCode(URL);
+    if (code == 0 || code == 404) {
+        cout << "failed to access url : " << URL << endl;
+        cout << "possible issues : " << endl;
+        for (int i = 0; i < sizeof(issues)/sizeof(issues[0]); i++) {
+            cout << i+1 << " - " << issues[i] << endl;
+        }
+        return false;
+    }
+    return true;
+}
 
 // Write callback function to capture the headers
 size_t WriteHeaderCallback(void* contents, size_t size, size_t nmemb, string* response) {
@@ -48,10 +113,10 @@ int getReturnCode(const char* url) {
     return 0;
 }
 
-int fuzz(int DIGITS, int BASE, const char* url) { 
+vector<string> fuzzAll(const char* url, int DIGITS, int BASE) { 
     int size = DIGITS;
     int times = 0;
-    vector<string> usedDir;
+    vector<string> res;
 
     while (1) {
         string currentWord;
@@ -87,49 +152,57 @@ int fuzz(int DIGITS, int BASE, const char* url) {
             }
         }
 
-        for (int i = 0; i < usedDir.size(); i++) {
-            if (usedDir[i] == currentWord) {
+        for (int i = 0; i < res.size(); i++) {
+            if (res[i] == currentWord) {
                 dirUsed = true;
             }
         }
         if (currentWord.size() > 0 && dirUsed == false) {
+
+            // send req
             string combined = url + currentWord;
             const char* result = combined.c_str();
             int code = getReturnCode(result);
             if (code != 0 && code != 404) {
                 cout << result << "  -  " << code << endl;
-                usedDir.push_back(currentWord);
+                res.push_back(currentWord);
             }
+
         }
         times++;
         if (steak) {
             break;
         }
     }
-    return times;
+    return res;
 }
 
-int main (int argc, char *argv[]) {
-    // argument syntax = dfuzz <target url> <max lenth of the words to try>
-    const char * URL = argv[1];
-    const int LENGTH = stoi(argv[2]);
-    const string issues[] = {"wifi is off","url doesnt exist","typo in url"};
-    int code = getReturnCode(URL);
-    string headingLogo = "██████╗ ███████╗██╗   ██╗███████╗███████╗\n██╔══██╗██╔════╝██║   ██║╚══███╔╝╚══███╔╝\n██║  ██║█████╗  ██║   ██║  ███╔╝   ███╔╝ \n██║  ██║██╔══╝  ██║   ██║ ███╔╝   ███╔╝  \n██████╔╝██║     ╚██████╔╝███████╗███████╗\n╚═════╝ ╚═╝      ╚═════╝ ╚══════╝╚══════╝";
-    cout << headingLogo << endl << "fuzzing tool created by mrdog233o5" << endl << endl;
+vector<string> fuzzWordlist(const char* url, const char* wordlist) {
+    vector<string> res;
+    vector<string> words;
+    string currentWord;
+    
+    // read wordlist
+    string line;
+    ifstream MyReadFile(wordlist);
+    while (getline (MyReadFile, line)) {
+        words.push_back(line);
+    }
+    MyReadFile.close();
 
-    if (code == 0 || code == 404) {
-        cout << "failed to access url : " << URL << endl;
-        cout << "possible issues : " << endl;
-        for (int i = 0; i < sizeof(issues)/sizeof(issues[0]); i++) {
-            cout << i+1 << " - " << issues[i] << endl;
+    // fuzz
+    for (int i = 0; i < words.size(); i++) {
+        // send req
+        currentWord = words[i];
+        string combined = url + currentWord;
+        const char* result = combined.c_str();
+        int code = getReturnCode(result);
+        if (code != 0 && code != 404) {
+            cout << result << "  -  " << code << endl;
+            res.push_back(currentWord);
         }
-    } else {
-        cout << "***All avaiable directories : " << endl << endl;
-        fuzz(LENGTH,sizeof(letters)/sizeof(char)-1,URL);
-        cout << endl << "done" << endl;
+        
     }
 
-    return 0;
+    return res;
 }
-
