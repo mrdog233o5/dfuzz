@@ -86,28 +86,22 @@ size_t WriteHeaderCallback(void* contents, size_t size, size_t nmemb, string* re
 
 int getReturnCode(const char* url) {
     if (curl) {
-        // Set the target URL
         curl_easy_setopt(curl, CURLOPT_URL, url);
 
-        // Exclude the body and capture only the headers
         curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
 
-        // Set the write callback function to capture the headers
         string response;
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteHeaderCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
-        // Perform the request
         CURLcode res = curl_easy_perform(curl);
         if (res == CURLE_OK) {
-            // Get the return code from the response
             long httpCode = 0;
             curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
             return httpCode;
         } else {
             return 0;
         }
-        // Cleanup
         curl_easy_cleanup(curl);
     }
     return 0;
